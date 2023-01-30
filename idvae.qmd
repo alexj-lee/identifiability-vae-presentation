@@ -1,0 +1,185 @@
+---
+title: "Identifiability and parameterization in VAEs"
+subtitle: "Alex Lee, 2023-01-31"
+width: 1920
+height: 1080
+margin: 0.05
+padding: 0.05
+max-scale: 1.5
+format:
+    revealjs:
+        chalkboard:
+            buttons: true
+        preview-links: auto
+        logo: assets/ucsf.png
+        theme: css/theme.scss
+        css: css/styles.css
+        navigation-mode: vertical
+---
+
+
+
+## Overall principles of VAEs 
+  
+<br>
+Objective: model some random vectors $\mathbf{x}  \in \mathbb{R}^d$ by using a latent variable $\mathbf{z} \in \mathbb{R}^n$ to structure a deep latent variable model:
+
+$$p_\mathbf{\theta}(\mathbf{x}, \mathbf{z}) = p_\mathbf{\theta}(x \mid\mathbf{z})p_\mathbf{\theta}(\mathbf{z})$$  
+
+::: {.centered}
+Where $\theta \in \Theta$ are parameters of that model.  
+
+<br> 
+The model then gives the observed distribution as: 
+:::
+
+$$p_\theta(x) = \int p_{\mathbf{\theta}}(\mathbf{x}, \mathbf{z}) \mathrm{d}\mathbf{z}$$
+
+::: {.footer}
+largely from the papers [Variational Autoencoders and Nonlinear ICA: A Unifying 
+Framework (Khemakhem, 2020)](https://arxiv.org/abs/1907.04809) and  
+[Challenging Common Assumptions in the Unsupervised Learning of Disentangled Representations (Locatello, 2019)](https://arxiv.org/abs/1811.12359)
+:::
+
+
+## What about the data?
+
+::: {font-size=2.5rem}
+
+::: {.centered}
+We assume there is a data generating process given by:  
+
+$p_{\mathbf{\theta^\ast}}(\mathbf{x}, \mathbf{z}) = p_{\theta^\ast}(\mathbf{x}\mid\mathbf{z}) p_{\theta^\ast}(\mathbf{z}^\ast)$  
+
+with $\mathbf{\theta}^\ast$ as true but unknown parameters.  
+
+<br>
+
+We then suppose the processes that generates our data, $\mathcal{D}$,
+
+$\mathcal{D} = \{\mathbf{x}^{(1)}, ..., \mathbf{x}^{(\mathit{N})}\}$ is,  
+
+
+$\mathbf{z}^{\ast(i)} \sim p_{\theta^\ast}(\mathbf{z})$  
+$\mathbf{x}^{(i)} \sim p_{\theta} (\mathbf{x} \mid \mathbf{z}^{\ast(i)})$  
+  
+  
+<br> 
+
+
+and we optimize using the likelihood such that after optimization:  
+
+$p_{\theta}(\mathbf{x}) \approx p_{\theta^{\ast}}(\mathbf{x})$
+
+:::
+:::
+
+# So, what's the problem? (according to Khemakhem et al.)
+
+::: {.centered}
+In our framework, we learn a generative model:  $p_\theta (\mathbf{x}, \mathbf{z}) = p_\theta (\mathbf{x} \mid \mathbf{z}) p_\theta (\mathbf{z})$
+as well as an inference model:  $q_\phi (\mathbf{z} \mid \mathbf{x})$
+:::
+
+
+::: {.columns}
+
+::: {.column width="40%" .fragment fragment-index=1}
+> The problem is that we generally have no guarantees about what these learned distributions actually are: all we know is that the marginal distribution over $x$ is meaningful.
+:::
+
+::: {.column width="60%" text-align="center" justify-content="center"}
+
+<div class="fragment" data-fragment-index=2>
+Intuitively, we cannot be confident in our inference model $q_\phi$, because our models are unidentifiable (do not satisfy): 
+
+$$\forall(\theta, \theta^{\prime}) : p_\theta(\mathbf{x}) = p_{\theta^\prime} (\mathbf{x}) \implies \theta = \theta^{\prime} $$
+</div>
+
+<div class="fragment" data-fragment-index=3>
+and in fact, [Locatello (2019)](https://arxiv.org/pdf/1811.12359.pdf) shows that it is impossible for *any* similar unsupervised model (including $\beta$-VAE, TC-VAE, etc.)
+without inductive bias (or supervision).
+</div>
+
+:::
+:::
+
+## Brief aside on the proof of this: {font-size="2rem"}
+
+> Theorem [(Hyvärinen and Pajunen, 1999)](https://doi.org/10.1016/S0893-6080(98)00140-3)
+Let $\mathbf{z} be a d-dimensional random vector of any distribution. Then there exists a transformation $\mathbf{g}: \mathbf{g}: \mathbb{R}^d \rightarrow \mathbb{R}^d$
+such that the components of $\mathbf{z}^{\prime} := \mathbf{g}(\mathbf{z})$ are independent, and each component has a standardized Gaussian distribution. In particular, 
+$z_{1}^{\prime}$ equals a monotonic transformation of $z_1$
+
+ 
+<div style="font-size: 2.5rem;"> 
+
+<br>
+Basically using something like Gram-Schmidt or QR we can always get a new set of variables that are independent and admit Gaussian parameterization. Once we transform 
+it this way, we can take any orthogonal transformation without changing the distribution (something like $\mathbf{z}^{\prime} = \mathbf{g}^{-1}(M\mathbf{g}(\mathbf{z})$). 
+As long as the decoder can invert the transformation in this way, we cannot (reliably) recover the true latents based on looking at the data alone.  
+
+<br>
+
+For further see Appendix of [Variational Autoencoders and Nonlinear ICA: A Unifying Framework (Khemakhem, 2020)](https://arxiv.org/abs/1907.04809) and [I Don't need u: identifiable non-linear ICA without side information (Willets 2021)](https://arxiv.org/abs/2106.05238).
+
+</div>
+
+# Well, OK, but do we care if VAE models are unidentifiable?
+<h3> Unfortunately, models are also poor at learning disentangled representations of data (unsupervised) </h3>  
+
+<div class="r-stack">
+<div class="fragment fade-in-then-out">
+Here we define disentanglement (informally) as separating the distinct factors of variation, or that a change in a single factor $z_i$ should lead to a single factor of the representation $r(\mathbf{x})$.
+<br> <br>
+Or, using a specific approximation called <u>total correlation</u>:<br> $C(X_1, ..., X_n) = D_{KL} [p(X_1, ..., X_n) || p(X_1)p(X_2) \cdot p(X_n)]$
+</div>
+
+<div class="fragment fade-in-then-out">
+The authors train a variety of VAEs ($\beta$-VAE, TC-VAE, DIP-VAE, FactorVAE) on a couple of datasets: 
+
+<div class="display: flex; flex-direction: row; max-width: 300rem; width: 300rem; margin: auto">
+
+<img src="https://i.imgur.com/shVORrA.jpg" style="height: 20%; width: 20%">
+<img src="https://i.imgur.com/IxZn6Ao.jpg" style="height: 20%; width: 20%">
+<img src="https://i.imgur.com/JGmPDa6.jpg" style="height: 20%; width: 20%">
+<img src="assets/3dshapes.gif">
+<img src="https://i.imgur.com/GWN0sx9.jpg" style="height: 20%; width: 20%">
+<p>
+Note that each of these has as "labels" the ground-truth factors of variation.
+</p>
+</div>
+
+</div>
+
+
+<div class="fragment fade-in" style="text-align: center">
+$C(X_1, ..., X_n) = D_{KL} [p(X_1, ..., X_n) || p(X_1)p(X_2) \cdot p(X_n)]$
+
+<div style="display: flex; flex-direction: row">
+
+<div style="margin: 0; padding: 0">
+<img src="assets/tc-exp.png" style="width: 150%; height: 150%; max-width: 138%; max-height: 138%; position: relative; left: -15rem">
+</div>
+
+<div style="margin: 0; padding: 0; font-size: 2rem; max-width: 44rem; display: flex; align-items; position: relative; left: 10rem">
+<br>
+
+<ul style="position: relative; top: 2rem; font-size: 2.5rem">
+<li> as regularization goes up (think of $\beta$-VAE), $z$ are disentangled--but only with random sampling
+<li> however, the correlation actually increases when we select the average representation (as we usually do)</li>
+<li> disentanglement mildly correlates with downstream accuracy </li>
+</ul>
+</div>
+
+
+</div>
+
+</div>
+
+</div>
+
+# What is to be done about this?
+
+
+
