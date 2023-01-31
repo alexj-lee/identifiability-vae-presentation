@@ -97,7 +97,7 @@ $$\forall(\theta, \theta^{\prime}) : p_\theta(\mathbf{x}) = p_{\theta^\prime} (\
 </div>
 
 <div class="fragment" data-fragment-index=3>
-and in fact, [Locatello (2019)](https://arxiv.org/pdf/1811.12359.pdf) shows that it is impossible for *any* similar unsupervised model (including $\beta$-VAE, TC-VAE, etc.)
+and in fact, [Locatello (2019)](https://arxiv.org/pdf/1811.12359.pdf) shows ID of disentangled models is impossible for *any* similar unsupervised model (including $\beta$-VAE, TC-VAE, etc.)
 without inductive bias (or supervision).
 </div>
 
@@ -136,7 +136,7 @@ Or, using a specific approximation called <u>total correlation</u>:<br> $C(X_1, 
 </div>
 
 <div class="fragment fade-in-then-out">
-The authors train a variety of VAEs ($\beta$-VAE, TC-VAE, DIP-VAE, FactorVAE) on a couple of datasets: 
+The authors (Locatello et al.) train a variety of VAEs ($\beta$-VAE, TC-VAE, DIP-VAE, FactorVAE) on a couple of datasets: 
 
 <div class="display: flex; flex-direction: row; max-width: 300rem; width: 300rem; margin: auto">
 
@@ -473,7 +473,7 @@ In addition, for the datasets shown (Shapes3D and MPI3D) there are many labels--
 </div>
 
 # Exploration on chest x-ray dataset
-<h4>Dataset has 14 classes; performs at least as well as comparator model (~90% accuracy) </h4>
+<h4>Dataset has 14 classes; CLAP performs at least as well as comparator model (~90% accuracy) </h4>
 <div style="display: flex; flex-direction: row">
 
 <div style="margin: 0; padding: 0">
@@ -496,7 +496,7 @@ Authors speculate that low resolution in output images is due to decoder fidelit
 # Caveats and takeaways
 
 <ul>
-<li> Novel decoder / prediction architecture has clear utility </li>
+<li> Relativly simple decoder / prediction architecture </li>
 <li> Unclear how poor performance would be with different types of supervision</li>
 <li> Authors comment various ground-truth features change jointly within traversal -- maybe a way in which sVAE+ is probably better</li>
 <li> Would be interesting to use scRNA-seq gene coexpression to interpret $\mathbf{z}$</li>
@@ -506,9 +506,9 @@ Authors speculate that low resolution in output images is due to decoder fidelit
 # Conclusions:
 <br>
 
-For iVAE, the message was really about conditional independence of $\mathbf{u}$ and $\mathbf{z}$, with no direct parameterization of $\mathbf{z}\mid\mathbf{x}$
+For iVAE, the method focuses on conditional independence of $\mathbf{u}$ and $\mathbf{z}$, with no direct parameterization of $\mathbf{z}\mid\mathbf{x}$
 
 <br>
-For sVAE+, we have a very different overall interpretation, where the main message is not so much conditional independence but sparse association of treatments and factors
+For sVAE+, focus is on but sparse association of treatments and factors
 <br>  <br>
-Then, for CLAP the method is much more focused on interpretability, and the anticausal model plays a strong role
+CLAP the method is much more focused on interpretability, and the anticausal model plays a strong role
