@@ -405,7 +405,7 @@ Unfortunately, models are also poor at learning disentangled representations of 
 </h3>
 <div class="r-stack">
 <div class="fragment fade-in-then-out">
-<p>Here we define disentanglement (informally) as separating the distinct factors of variation, or that a change in a single factor <span class="math inline">\(z_i\)</span> should lead to a single factor of the representation <span class="math inline">\(r(\mathbf{x})\)</span>. <br> <br> Or, using a specific approximation called <u>total correlation</u>:<br> <span class="math inline">\(C(X_1, ..., X_n) = D_{KL} [p(X_1, ..., X_n) || p(X_1)p(X_2) \cdot p(X_n)]\)</span></p>
+<p>Here we define disentanglement (informally) as separating the distinct factors of variation, or that a change in a single factor <span class="math inline">\(z_i\)</span> should lead to a single factor of the representation <span class="math inline">\(r(\mathbf{x})\)</span>. <br> <br> Or, using a specific approximation called <u>total correlation</u>:<br> <span class="math inline">\(C(X_1, ..., X_n) = D_{KL} [p(X_1, ..., X_n)\ ||\ p(X_1)p(X_2) \cdot p(X_n)]\)</span></p>
 </div>
 <div class="fragment fade-in-then-out">
 <p>The authors train a variety of VAEs (<span class="math inline">\(\beta\)</span>-VAE, TC-VAE, DIP-VAE, FactorVAE) on a couple of datasets:</p>
@@ -417,7 +417,7 @@ Note that each of these has as “labels” the ground-truth factors of variatio
 </div>
 </div>
 <div class="fragment fade-in" style="text-align: center">
-<p><span class="math inline">\(C(X_1, ..., X_n) = D_{KL} [p(X_1, ..., X_n) || p(X_1)p(X_2) \cdot p(X_n)]\)</span></p>
+<p><span class="math inline">\(C(X_1, ..., X_n) = D_{KL} [p(X_1, ..., X_n)\ ||\ p(X_1)p(X_2) \cdot p(X_n)]\)</span></p>
 <div style="display: flex; flex-direction: row">
 
 <div style="margin: 0; padding: 0">
@@ -429,7 +429,7 @@ Note that each of these has as “labels” the ground-truth factors of variatio
 <li>
 as regularization goes up (think of <span class="math inline">\(\beta\)</span>-VAE), <span class="math inline">\(z\)</span> are disentangled–but only with random sampling
 </li><li>
-however, the correlation actually increases when we select the average representation (as we usually do)
+however, the correlation actually increases when we select the average representation (as we often do)
 </li>
 <li>
 disentanglement mildly correlates with downstream accuracy
@@ -443,6 +443,297 @@ disentanglement mildly correlates with downstream accuracy
 
 <section id="what-is-to-be-done-about-this" class="title-slide slide level1 center">
 <h1>What is to be done about this?</h1>
+<h3>
+The authors of <a href="https://arxiv.org/abs/1907.04809">Khemakhem (2020)</a> actually show that with supervision, we can have identifiability
+</h3>
+<div>
+<p><br></p>
+<p style="font-size: 32rem">
+</p><p>We utilize a new variable, <span class="math inline">\(\mathbf{u}\)</span>, to enforce conditional independency of <span class="math inline">\(\mathbf{z}\)</span> with a new model where:</p>
+<p><span class="math display">\[
+p_\theta(\mathbf{x}, \mathbf{z}\mid \mathbf{u}) = p_f(\mathbf{x} \mid \mathbf{z}) p_\phi(\mathbf{z} \mid \mathbf{u})
+\]</span></p>
+<p><span class="fragment"> this model forms a Bayes net: <span class="math inline">\(\mathbf{u} \rightarrow \mathbf{z} \rightarrow \mathbf{x}\)</span> and here, <span class="math inline">\(\theta\)</span> and <span class="math inline">\(\phi\)</span> are identifiable up to permutations and scaling–unless <span class="math inline">\(\mathbf{z}\)</span> are Gaussian with only scale parameters. </span></p>
+<div class="r-stack">
+<div class="fragment fade-in-then-out">
+<p>The likelihood is: <span class="math display">\[
+\mathbf{E}_{q_{\phi}(\mathbf{z} \mid \mathbf{x}, \mathbf{u})} [\mathrm{log}\ p_\theta(\mathbf{x}, \mathbf{z} \mid \mathbf{u}) - log_{q_\phi}(\mathbf{z} \mid \mathbf{x}, \mathbf{u})]
+\]</span></p>
+</div>
+<div class="fragment fade-in">
+<p>which can be rewritten: <span class="math inline">\(\mathrm{log}\ p_\theta(\mathbf{x} \mid \mathbf{u}) - \mathrm{KL}(q_\phi(\mathbf{z} \mid \mathbf{x}, \mathbf{u})\ ||\ p_\theta(\mathbf{z} \mid \mathbf{x}, \mathbf{u}))\)</span></p>
+</div>
+</div>
+<p></p>
+</div>
+</section>
+
+<section id="the-salient-fact-here-is-that-mathbfu-provides-the-unmixing-of-mathbfz" class="title-slide slide level1 center">
+<h1>The salient fact here is that <span class="math inline">\(\mathbf{u}\)</span> provides the unmixing of <span class="math inline">\(\mathbf{z}\)</span></h1>
+<h3>
+So, then, what is the right variable <span class="math inline">\(\mathbf{u}\)</span> to condition on, and how should we do it?
+</h3>
+<p>There’s a rapidly developing literature in this area, but these two papers present different ideas about this:</p>
+<div style="text-align: center;">
+<div class="r-stack" style="">
+<div class="fragment fade-in-then-out" style="padding: 0; margin: 0">
+<p><img src="assets/causal-shift.png" style="height: 80%; width: 80%; max-width: 150%; max-height: 150%"></p>
+</div>
+<div class="fragment fade-in" style="padding: 0; margin: 0">
+<p><img src="assets/clap.png" style="height: 80%; width: 80%; max-width: 150%; max-height: 150%"></p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="lopez-et-al.-study-perturb-seq-analysis-with-a-link-to-causal-learning" class="title-slide slide level1 center">
+<h1><a href="https://arxiv.org/abs/2211.03553">Lopez et al.</a> study Perturb-seq analysis with a link to causal learning</h1>
+<h3>
+The idea is to integrate the idea of <a href="https://arxiv.org/abs/2207.07732">sparse mechanism shift:</a>
+</h3>
+<div>
+<div style="margin:0;padding:0; text-align: center">
+<p><span> which says each perturbation only affects a few mechanisms (latents). </span></p>
+</div>
+<br> <br> The idea is to model this using a sparse a bipartite graph, <span class="math inline">\(G^a = ([K], [p], E)\)</span>, where <span class="math inline">\(E\)</span> are edges, <span class="math inline">\([p]\)</span> the number of latents, and <span class="math inline">\([K]\)</span> denotes the set of perturbations. <br> <br>
+<div style="text-align:center">
+<p>note: instead of <span class="math inline">\(\mathbf{u}\)</span> as the supervising / conditional variable, now we are using <span class="math inline">\(\mathbf{a}\)</span></p>
+</div>
+<p><br> <br></p>
+</div>
+</section>
+
+<section id="to-do-this-we-modify-the-normal-scvi-vae-with-a-spike-and-slab-prior" class="title-slide slide level1 center">
+<h1>To do this, we modify the normal scVI VAE with a spike-and-slab prior:</h1>
+<div class="columns">
+<div class="column" style="width:70%;">
+<p><span class="math display">\[
+z_i\ \mid\ a \sim \gamma_i^a\mathrm{Normal}(\mu_i^a, 1) + (1 - \gamma_i^a)\mathrm{Normal}(0,1),\ \mathbf{z} \in \mathbb{R}^d
+\\
+\pi_i^a \sim \mathrm{Beta}(1, K)
+\\
+\gamma_i^a \sim \mathrm{Bernoulli}(\pi_i^a),
+\]</span></p>
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><img src="assets/mask.png" style="height: 100%; width: 100%"></p>
+</div><div class="column" style="width:10%;">
+
+</div><div class="column" style="width:30%;">
+<p><br> The dotted lines indicate the <span class="math inline">\(\pi_i^a\)</span>’s learned by the model.</p>
+</div>
+</div>
+</div><div class="column" style="width:10%;">
+<!-- empty column to create gap -->
+</div><div class="column" style="width:20%;">
+<p><span style="font-size: 2.5rem">In practice we use a Gumbel-sigmoid to model the Bernoulli.</span> <br> <br> <br> <span style="font-size: 2.5rem">This formulation gives a identifiability up to linear transformation–stronger than before</span></p>
+</div>
+</div>
+</section>
+
+<section id="this-model-performs-well-in-simulations-of-single-cell-data" class="title-slide slide level1 center">
+<h1>This model performs well in simulations of single-cell data</h1>
+<h3>
+The authors simulate data with this sparse mechanism and try to see if the right <span class="math inline">\(\pi_i^a\)</span> are learned
+</h3>
+<div>
+<div style="text-align: center">
+<p><img src="assets/simulations.png" style="width: 100%; height: 100%"></p>
+</div>
+<p>
+Models were mixed with a small neural network–so I suppose OK that the F1 is quite low-and in general, the iVAE and sVAE were modified in ways that are not exactly correspondent to the original framing to accomodate comparison
+</p>
+</div>
+<div class="footer">
+<p>Interventional NLL means transfer learning on a subset of held-out data</p>
+</div>
+</section>
+
+<section id="analysis-on-replogle-2022-datasets" class="title-slide slide level1 center">
+<h1>Analysis on <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9380471/">Replogle (2022) datasets</a></h1>
+<h3>
+</h3>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><img src="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9380471/bin/nihms-1812939-f0001.jpg" style="width: 80%; height: 80%; position: relative; left: -10rem"></p>
+</div><div class="column" style="width:30%;">
+<p><img src="assets/replogle.png" style="width: 180%; height: 180%; max-width: 180%; max-height: 180%; position: relative; left: -20rem"></p>
+<div style="max-width: 800px">
+<p>Interventional NLL is highest for sVAE+ on transfer learning task</p>
+<p><br> Hold out sets were defined by manual clustering of perturbations</p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="conclusions-and-caveats" class="title-slide slide level1 center">
+<h1>Conclusions and caveats</h1>
+<ul>
+<li>
+<span class="math inline">\(\mathrm{Beta}\)</span> distribution may not be coded correctly in the reference implementation (doesn’t seem to incorporate <span class="math inline">\([K]\)</span>)
+</li>
+<li>
+Seems like overall model does well at recovering sparse-shift simulated data–does this match biology?
+</li>
+<li>
+What are ways to better validate this sort of model? Known gene lists or TF-target lists?
+</li>
+<li>
+Logits for <span class="math inline">\(\pi_i^a\)</span> are scalar values that are optimized; can we use other models / methods to parameterize more flexibly?
+</li>
+<li>
+How to interpret <span class="math inline">\(z\)</span>’s? Paper used post-hoc methods but not LDVAE variants; are there other ways?
+</li>
+</ul>
+</section>
+
+<section id="taeb-et-al.-focus-on-interpretability-and-predictive-accuracy" class="title-slide slide level1 center">
+<h1>Taeb et al.&nbsp;focus on interpretability and predictive accuracy</h1>
+<h3>
+Assumption: <span class="math inline">\(\mathbf{z}\)</span> can be partitioned into two parts in to an “anti-causal” model:
+</h3>
+<p><br></p>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><img src="assets/taeb-1a.png" style="width: 85%; height: auto; position: relative; top: -90px; left: 0rem;"></p>
+</div><div class="column" style="width:40%;">
+<p><br> <br> <span class="math inline">\(\mathbf{z}_c\)</span> and <span class="math inline">\(\mathbf{z}_s\)</span>, where <span class="math inline">\(s\)</span> denotes “style” features and <span class="math inline">\(c\)</span> denotes “core” features–only core features are relevant for prediction.</p>
+</div>
+</div>
+</section>
+
+<section id="we-also-set-assumptions-on-the-covariance-structure-of-mathbfz" class="title-slide slide level1 center">
+<h1>We also set assumptions on the covariance structure of <span class="math inline">\(\mathbf{z}\)</span></h1>
+<p><span class="math display">\[
+\mathbf{X} = f^\star(\mathbf{Z}), \mathrm{where}\ \epsilon \perp\kern-5pt\perp \mathbf{Z}, \mathbf{Y}
+\\
+\mathbf{Z}\mid\mathbf{Y} = y \sim \mathcal{N}
+\Biggl(
+\begin{pmatrix}
+\mu_y \\
+\mu
+\end{pmatrix},
+\begin{pmatrix}
+D_y^\star &amp; 0 \\
+0 &amp; G^\star
+\end{pmatrix}
+\Biggr),\ D_y^\star\ \mathrm{diagonal}
+\]</span></p>
+<p>Which basically gives the factorized posterior for <span class="math inline">\(D_y^\star\)</span> that we are used to and lets the style features have an arbitrary structure.</p>
+<p>In this model we also get identifiability up to scaling and permutation (less strong than sVAE+).</p>
+</section>
+
+<section id="this-model-has-a-very-different-architecture-with-two-portions" class="title-slide slide level1 center">
+<h1>This model has a very different architecture, with two portions</h1>
+<div style="display: flex; flex-direction: row">
+<div style="margin: 0; padding: 0">
+<p><img src="assets/clap-arch.png" style="width: 170%; height: 170%; max-width: 170%; max-height: 170%; position: relative; left: -5rem"></p>
+</div>
+<div class="r-stack">
+<div class="fragment fade-out" style="margin: 0; padding: 0; max-width: 60rem; position: relative; left: 30rem; ">
+<p style="position: relative; top: 2rem;">
+</p><p><br> There are two encoders:</p>
+<ul>
+<li>
+<span class="math inline">\(\phi_{cl}\)</span>, which sees <span class="math inline">\(\mathbf{Y}\)</span> directly during training
+</li>
+<li>
+<span class="math inline">\(\phi_p\)</span>, which only sees <span class="math inline">\(\mathbf{X}\)</span>
+</li>
+</ul>
+<br> And two decoders:
+<ul>
+<li>
+<span class="math inline">\(f\)</span>, which actually is used <u>twice</u> every forward pass, once for each set of <span class="math inline">\(\mathbf{z}\)</span>
+</li>
+<li>
+<span class="math inline">\(\phi\)</span>, which simply outputs <span class="math inline">\(\hat{y}\)</span>
+</li>
+</ul>
+<p></p>
+</div>
+<div class="fragment fade-in" style="margin: 0; padding: 0; max-width: 60rem; position: relative; left: 30rem; ">
+<p><br> <br> The actual loss then is <span class="math inline">\(\mathcal{L} = \mathcal{L}_{cl} + \mathcal{L}_{p} - \lambda_n\rho\)</span></p>
+<ul>
+<li>
+<span class="math inline">\(\mathcal{L}_{cl}\)</span> (which is actually two terms, <span class="math inline">\(f(\phi^p(\mathbf{x}))\)</span> and <span class="math inline">\(f(\phi^{cl}(\mathbf{x}))\)</span> which helps the <span class="math inline">\(\mathbf{z}\)</span> converge together and causes “concept learning”
+</li>
+<li>
+<span class="math inline">\(\lambda\rho\)</span> is a group sparsity penalty on the decoder and encoder, separately
+</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<section id="interpretability-is-provided-in-form-of-latent-traversal-inspection" class="title-slide slide level1 center">
+<h1>Interpretability is provided in form of latent traversal inspection</h1>
+<div style="display: flex; flex-direction: row">
+<div style="margin: 0; padding: 0">
+<p><img src="assets/clap-traversal.png" style="width: 170%; height: 170%; max-width: 170%; max-height: 170%; position: relative; left: -5rem"></p>
+</div>
+<div class="fragment fade-out" style="margin: 0; padding: 0; max-width: 60rem; position: relative; left: 30rem; ">
+<p><br> For a given data point, posterior mean is computed and then data points around the source are decoded.</p>
+<p><br> Global vs local weights are from the model or from the data. <img src="assets/global-local.png" style="height: auto; width: 100%"></p>
+</div>
+</div>
+</section>
+
+<section id="accuracy-is-high-99-but-traversals-not-incredibly-convincing" class="title-slide slide level1 center">
+<h1>Accuracy is high (&gt;99%) but traversals not incredibly convincing</h1>
+<div style="display: flex; flex-direction: row">
+<div style="margin: 0; padding: 0">
+<p><img src="assets/vis1.png" style="width: 170%; height: 170%; max-width: 170%; max-height: 170%; position: relative; left: -5rem"></p>
+</div>
+<div style="margin: 0; padding: 0; max-width: 50rem; position: relative; left: 30rem; ">
+<p><br> Regularization is also very important; without <span class="math inline">\(\lambda\)</span> model seems to be more likely to have low-variance / unimportant dimensions. <br> <br> In addition, for the datasets shown (Shapes3D and MPI3D) there are many labels–performance and ability to recover meaningful variables decreases with number of labels provided</p>
+</div>
+</div>
+</section>
+
+<section id="exploration-on-chest-x-ray-dataset" class="title-slide slide level1 center">
+<h1>Exploration on chest x-ray dataset</h1>
+<h4>
+Dataset has 14 classes; performs at least as well as comparator model (~90% accuracy)
+</h4>
+<div style="display: flex; flex-direction: row">
+<div style="margin: 0; padding: 0">
+<p><img src="assets/chestxray.png" style="width: 170%; height: 170%; max-width: 105%; max-height: 105%; position: relative; left: -10rem; top: -2rem"></p>
+</div>
+<div style="margin: 0; padding: 0; max-width: 60rem; position: relative; left: -3rem; ">
+<p><br></p>
+<p>Local vs global weights seem to have some overall relevance for classification (Lung shape feature) <br> <br> CCVAE does not seem to produce as disentangled features <br> <br> Authors speculate that low resolution in output images is due to decoder fidelity</p>
+</div>
+</div>
+</section>
+
+<section id="caveats-and-takeaways" class="title-slide slide level1 center">
+<h1>Caveats and takeaways</h1>
+<ul>
+<li>
+Novel decoder / prediction architecture has clear utility
+</li>
+<li>
+Unclear how poor performance would be with different types of supervision
+</li>
+<li>
+Authors comment various ground-truth features change jointly within traversal – maybe a way in which sVAE+ is probably better
+</li>
+<li>
+Would be interesting to use scRNA-seq gene coexpression to interpret <span class="math inline">\(\mathbf{z}\)</span>
+</li>
+<li>
+Not clear if every prediction target has its own <span class="math inline">\(\phi\)</span> model
+</li>
+</ul>
+</section>
+
+<section id="conclusions" class="title-slide slide level1 center">
+<h1>Conclusions:</h1>
+<p><br></p>
+<p>For iVAE, the message was really about conditional independence of <span class="math inline">\(\mathbf{u}\)</span> and <span class="math inline">\(\mathbf{z}\)</span>, with no direct parameterization of <span class="math inline">\(\mathbf{z}\mid\mathbf{x}\)</span></p>
+<p><br> For sVAE+, we have a very different overall interpretation, where the main message is not so much conditional independence but sparse association of treatments and factors <br> <br> Then, for CLAP the method is much more focused on interpretability, and the anticausal model plays a strong role</p>
 
 <img src="assets/ucsf.png" class="slide-logo r-stretch"><div class="footer footer-default">
 

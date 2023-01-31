@@ -132,7 +132,7 @@ For further see Appendix of [Variational Autoencoders and Nonlinear ICA: A Unify
 <div class="fragment fade-in-then-out">
 Here we define disentanglement (informally) as separating the distinct factors of variation, or that a change in a single factor $z_i$ should lead to a single factor of the representation $r(\mathbf{x})$.
 <br> <br>
-Or, using a specific approximation called <u>total correlation</u>:<br> $C(X_1, ..., X_n) = D_{KL} [p(X_1, ..., X_n) || p(X_1)p(X_2) \cdot p(X_n)]$
+Or, using a specific approximation called <u>total correlation</u>:<br> $C(X_1, ..., X_n) = D_{KL} [p(X_1, ..., X_n)\ ||\ p(X_1)p(X_2) \cdot p(X_n)]$
 </div>
 
 <div class="fragment fade-in-then-out">
@@ -154,7 +154,7 @@ Note that each of these has as "labels" the ground-truth factors of variation.
 
 
 <div class="fragment fade-in" style="text-align: center">
-$C(X_1, ..., X_n) = D_{KL} [p(X_1, ..., X_n) || p(X_1)p(X_2) \cdot p(X_n)]$
+$C(X_1, ..., X_n) = D_{KL} [p(X_1, ..., X_n)\ ||\ p(X_1)p(X_2) \cdot p(X_n)]$
 
 <div style="display: flex; flex-direction: row">
 
@@ -167,7 +167,7 @@ $C(X_1, ..., X_n) = D_{KL} [p(X_1, ..., X_n) || p(X_1)p(X_2) \cdot p(X_n)]$
 
 <ul style="position: relative; top: 2rem; font-size: 2.5rem">
 <li> as regularization goes up (think of $\beta$-VAE), $z$ are disentangled--but only with random sampling
-<li> however, the correlation actually increases when we select the average representation (as we usually do)</li>
+<li> however, the correlation actually increases when we select the average representation (as we often do)</li>
 <li> disentanglement mildly correlates with downstream accuracy </li>
 </ul>
 </div>
@@ -180,6 +180,335 @@ $C(X_1, ..., X_n) = D_{KL} [p(X_1, ..., X_n) || p(X_1)p(X_2) \cdot p(X_n)]$
 </div>
 
 # What is to be done about this?
+<h3>The authors of <a href="https://arxiv.org/abs/1907.04809">Khemakhem (2020)</a> actually show that with supervision, we can have identifiability</h3>
+
+<div>
+
+<br>
+
+<p style="font-size: 32rem"> We utilize a new variable, $\mathbf{u}$, to enforce conditional independency of $\mathbf{z}$ with a new model where:
+
+$$
+p_\theta(\mathbf{x}, \mathbf{z}\mid \mathbf{u}) = p_f(\mathbf{x} \mid \mathbf{z}) p_\phi(\mathbf{z} \mid \mathbf{u})
+$$
+
+<span class="fragment">
+this model forms a Bayes net: $\mathbf{u} \rightarrow \mathbf{z} \rightarrow \mathbf{x}$
+and here, $\theta$ and $\phi$ are identifiable up to permutations and scaling--unless $\mathbf{z}$ are Gaussian with only scale parameters.
+</span>
 
 
+<div class="r-stack">
+<div class="fragment fade-in-then-out">
 
+The likelihood is:
+$$
+\mathbf{E}_{q_{\phi}(\mathbf{z} \mid \mathbf{x}, \mathbf{u})} [\mathrm{log}\ p_\theta(\mathbf{x}, \mathbf{z} \mid \mathbf{u}) - log_{q_\phi}(\mathbf{z} \mid \mathbf{x}, \mathbf{u})]
+$$
+</div>
+
+<div class="fragment fade-in">
+which can be rewritten: $\mathrm{log}\ p_\theta(\mathbf{x} \mid \mathbf{u}) - \mathrm{KL}(q_\phi(\mathbf{z} \mid \mathbf{x}, \mathbf{u})\ ||\ p_\theta(\mathbf{z} \mid \mathbf{x}, \mathbf{u}))$
+
+</div>
+</div>
+
+
+</p>
+
+</div>
+
+# The salient fact here is that $\mathbf{u}$ provides the unmixing of $\mathbf{z}$
+<h3> So, then, what is the right variable $\mathbf{u}$ to condition on, and how should we do it? </h3>
+
+There's a rapidly developing literature in this area, but these two papers present different ideas about this: 
+
+<div style="text-align: center;">
+<div class="r-stack" style="">
+
+<div class="fragment fade-in-then-out" style="padding: 0; margin: 0">
+<img src="assets/causal-shift.png" style="height: 80%; width: 80%; max-width: 150%; max-height: 150%">
+</div>
+
+<div class="fragment fade-in" style="padding: 0; margin: 0">
+<img src="assets/clap.png" style="height: 80%; width: 80%; max-width: 150%; max-height: 150%">
+</div>
+
+</div>
+</div>
+
+# <a href="https://arxiv.org/abs/2211.03553">Lopez et al.</a> study Perturb-seq analysis with a link to causal learning
+<h3> The idea is to integrate the idea of <a href="https://arxiv.org/abs/2207.07732">sparse mechanism shift:</a> </h3>
+
+<div>
+<div style="margin:0;padding:0; text-align: center">
+<span> which says each perturbation only affects a few mechanisms (latents). </span>
+</div>
+
+<br> <br>
+The idea is to model this using a sparse a bipartite graph, $G^a = ([K], [p], E)$, where $E$ are edges, $[p]$ the number of latents, and $[K]$ denotes the set of perturbations.
+<br>
+<br>
+<div style="text-align:center">
+note: instead of $\mathbf{u}$ as the supervising / conditional variable, now we are using $\mathbf{a}$
+</div>
+<br> <br>
+
+</div>
+
+# To do this, we modify the normal scVI VAE with a spike-and-slab prior:
+
+:::: {.columns}
+
+::: {.column width="70%"}
+$$
+z_i\ \mid\ a \sim \gamma_i^a\mathrm{Normal}(\mu_i^a, 1) + (1 - \gamma_i^a)\mathrm{Normal}(0,1),\ \mathbf{z} \in \mathbb{R}^d
+\\
+\pi_i^a \sim \mathrm{Beta}(1, K)
+\\
+\gamma_i^a \sim \mathrm{Bernoulli}(\pi_i^a), 
+$$
+
+:::: {.columns}
+
+::: {.column width="50%"}
+<img src="assets/mask.png" style="height: 100%; width: 100%">
+:::
+
+::: {.column width="10%"}
+:::
+
+::: {.column width="30%"}
+<br>
+The dotted lines indicate the $\pi_i^a$'s learned by the model.
+:::
+
+::::
+
+:::
+
+::: {.column width="10%"}
+<!-- empty column to create gap -->
+:::
+
+::: {.column width="20%" }
+[In practice we use a Gumbel-sigmoid to model the Bernoulli.]{style="font-size: 2.5rem"}
+<br> <br> <br>
+[This formulation gives a identifiability up to linear transformation--stronger than before]{style="font-size: 2.5rem"}
+:::
+
+::::
+
+# This model performs well in simulations of single-cell data
+<h3> The authors simulate data with this sparse mechanism and try to see if the right $\pi_i^a$ are learned</h3>
+
+<div>
+<div style="text-align: center">
+<img src="assets/simulations.png" style="width: 100%; height: 100%">
+</div>
+
+<p> Models were mixed with a small neural network--so I suppose OK that the F1 is quite low-and in general, the iVAE and sVAE were modified in
+ways that are not exactly correspondent to the original framing to accomodate comparison </p>
+</div>
+
+::: {.footer}
+Interventional NLL means transfer learning on a subset of held-out data
+:::
+
+# Analysis on <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9380471/">Replogle (2022) datasets</a>
+<h3> </h3>
+
+:::: {.columns}
+
+::: {.column width="60%"}
+<img src="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9380471/bin/nihms-1812939-f0001.jpg" style="width: 80%; height: 80%; position: relative; left: -10rem">
+:::
+
+::: {.column width="30%"}
+<img src="assets/replogle.png" style="width: 180%; height: 180%; max-width: 180%; max-height: 180%; position: relative; left: -20rem">
+
+<div style="max-width: 800px">
+Interventional NLL is highest for sVAE+ on transfer learning task
+
+<br>
+Hold out sets were defined by manual clustering of perturbations
+</div>
+:::
+
+::::
+
+# Conclusions and caveats
+
+<ul>
+<li> $\mathrm{Beta}$ distribution may not be coded correctly in the reference implementation (doesn't seem to incorporate $[K]$)</li>
+<li> Seems like overall model does well at recovering sparse-shift simulated data--does this match biology?</li>
+<li> What are ways to better validate this sort of model? Known gene lists or TF-target lists? </li>
+<li> Logits for $\pi_i^a$ are scalar values that are optimized; can we use other models / methods to parameterize more flexibly?</li>
+<li> How to interpret $z$'s? Paper used post-hoc methods but not LDVAE variants; are there other ways? </li>
+</ul>
+
+# Taeb et al. focus on interpretability and predictive accuracy
+<h3> Assumption: $\mathbf{z}$ can be partitioned into two parts in to an "anti-causal" model:</h3>
+
+
+<br>
+
+:::: {.columns}
+
+::: {.column width="60%"}
+<img src="assets/taeb-1a.png" style="width: 85%; height: auto; position: relative; top: -90px; left: 0rem;">
+:::
+
+::: {.column width="40%"}
+<br>
+<br>
+$\mathbf{z}_c$ and $\mathbf{z}_s$, where $s$ denotes "style" features and $c$ denotes "core" features--only core features are relevant for prediction.
+:::
+
+::::
+
+# We also set assumptions on the covariance structure of $\mathbf{z}$
+
+$$
+\mathbf{X} = f^\star(\mathbf{Z}), \mathrm{where}\ \epsilon \perp\kern-5pt\perp \mathbf{Z}, \mathbf{Y} 
+\\
+\mathbf{Z}\mid\mathbf{Y} = y \sim \mathcal{N}
+\Biggl(
+\begin{pmatrix}
+\mu_y \\
+\mu
+\end{pmatrix},
+\begin{pmatrix}
+D_y^\star & 0 \\
+0 & G^\star
+\end{pmatrix}
+\Biggr),\ D_y^\star\ \mathrm{diagonal}
+$$
+
+Which basically gives the factorized posterior for $D_y^\star$ that we are used to and lets the style features have an arbitrary structure.
+
+In this model we also get identifiability up to scaling and permutation (less strong than sVAE+).
+
+
+# This model has a very different architecture, with two portions
+
+<div style="display: flex; flex-direction: row">
+
+<div style="margin: 0; padding: 0">
+<img src="assets/clap-arch.png" style="width: 170%; height: 170%; max-width: 170%; max-height: 170%; position: relative; left: -5rem">
+</div>
+
+<div class="r-stack">
+<div style="margin: 0; padding: 0; max-width: 60rem; position: relative; left: 30rem; " class="fragment fade-out">
+
+<p style="position: relative; top: 2rem;">
+<br>
+There are two encoders:
+
+<ul>
+<li> $\phi_{cl}$, which sees $\mathbf{Y}$ directly during training</li>
+<li> $\phi_p$, which only sees $\mathbf{X}$</li>
+</ul>
+<br>
+And two decoders:
+<ul>
+<li> $f$, which actually is used <u>twice</u> every forward pass, once for each set of $\mathbf{z}$</li>
+<li> $\phi$, which simply outputs $\hat{y}$</li>
+</ul>
+
+</p>
+</div>
+
+<div class="fragment fade-in" style="margin: 0; padding: 0; max-width: 60rem; position: relative; left: 30rem; ">
+<br> <br>
+The actual loss then is $\mathcal{L} = \mathcal{L}_{cl} + \mathcal{L}_{p} - \lambda_n\rho$ 
+
+<ul>
+<li> $\mathcal{L}_{cl}$ (which is actually two terms, $f(\phi^p(\mathbf{x}))$ and $f(\phi^{cl}(\mathbf{x}))$ which helps the $\mathbf{z}$ converge together and causes "concept learning" </li>
+<li> $\lambda\rho$ is a group sparsity penalty on the decoder and encoder, separately</li>
+</ul>
+</div>
+
+</div>
+
+
+</div>
+
+# Interpretability is provided in form of latent traversal inspection
+
+<div style="display: flex; flex-direction: row">
+
+<div style="margin: 0; padding: 0">
+<img src="assets/clap-traversal.png" style="width: 170%; height: 170%; max-width: 170%; max-height: 170%; position: relative; left: -5rem">
+</div>
+
+<div style="margin: 0; padding: 0; max-width: 60rem; position: relative; left: 30rem; " class="fragment fade-out">
+<br>
+For a given data point, posterior mean is computed and then data points around the source are decoded.
+
+<br>
+Global vs local weights are from the model or from the data.
+<img src="assets/global-local.png" style="height: auto; width: 100%">
+</div>
+
+</div>
+
+# Accuracy is high (>99%) but traversals not incredibly convincing
+
+
+<div style="display: flex; flex-direction: row">
+
+<div style="margin: 0; padding: 0">
+<img src="assets/vis1.png" style="width: 170%; height: 170%; max-width: 170%; max-height: 170%; position: relative; left: -5rem">
+</div>
+
+<div style="margin: 0; padding: 0; max-width: 50rem; position: relative; left: 30rem; " class="">
+<br>
+Regularization is also very important; without $\lambda$ model seems to be more likely to have low-variance / unimportant dimensions.
+<br>
+<br>
+In addition, for the datasets shown (Shapes3D and MPI3D) there are many labels--performance and ability to recover meaningful variables decreases with number of labels provided 
+</div>
+
+</div>
+
+# Exploration on chest x-ray dataset
+<h4>Dataset has 14 classes; performs at least as well as comparator model (~90% accuracy) </h4>
+<div style="display: flex; flex-direction: row">
+
+<div style="margin: 0; padding: 0">
+<img src="assets/chestxray.png" style="width: 170%; height: 170%; max-width: 105%; max-height: 105%; position: relative; left: -10rem; top: -2rem">
+</div>
+
+<div style="margin: 0; padding: 0; max-width: 60rem; position: relative; left: -3rem; " >
+<br>
+
+Local vs global weights seem to have some overall relevance for classification (Lung shape feature)
+<br> <br>
+CCVAE does not seem to produce as disentangled features
+<br> <br>
+Authors speculate that low resolution in output images is due to decoder fidelity
+
+</div>
+
+</div>
+
+# Caveats and takeaways
+
+<ul>
+<li> Novel decoder / prediction architecture has clear utility </li>
+<li> Unclear how poor performance would be with different types of supervision</li>
+<li> Authors comment various ground-truth features change jointly within traversal -- maybe a way in which sVAE+ is probably better</li>
+<li> Would be interesting to use scRNA-seq gene coexpression to interpret $\mathbf{z}$</li>
+<li> Not clear if every prediction target has its own $\phi$ model</li>
+</ul>
+
+# Conclusions:
+<br>
+
+For iVAE, the message was really about conditional independence of $\mathbf{u}$ and $\mathbf{z}$, with no direct parameterization of $\mathbf{z}\mid\mathbf{x}$
+
+<br>
+For sVAE+, we have a very different overall interpretation, where the main message is not so much conditional independence but sparse association of treatments and factors
+<br>  <br>
+Then, for CLAP the method is much more focused on interpretability, and the anticausal model plays a strong role
