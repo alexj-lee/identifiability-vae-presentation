@@ -321,11 +321,11 @@ Interventional NLL means transfer learning on a subset of held-out data
 :::: {.columns}
 
 ::: {.column width="60%"}
-<img src="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9380471/bin/nihms-1812939-f0001.jpg" style="width: 80%; height: 80%; position: relative; left: -10rem">
+<img src="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9380471/bin/nihms-1812939-f0001.jpg" style="width: 80%; height: 80%; position: relative; left: -2rem">
 :::
 
 ::: {.column width="30%"}
-<img src="assets/replogle.png" style="width: 180%; height: 180%; max-width: 180%; max-height: 180%; position: relative; left: -20rem">
+<img src="assets/replogle.png" style="width: 180%; height: 180%; max-width: 180%; max-height: 180%; position: relative; left: -18rem">
 
 <div style="max-width: 800px">
 Interventional NLL is highest for sVAE+ on transfer learning task
